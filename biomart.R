@@ -1,4 +1,6 @@
 #library("biomaRt")
+diff_gene_deseq2 <-subset(res, pvalue < 0.05 & log2FoldChange > 1 | log2FoldChange < -1)
+head(diff_gene_deseq2)
 #mart <- useDataset("sscrofa_gene_ensembl", useMart("ensembl"))
 #my_ensembl_gene_id <- row.names(diff_gene_deseq2)
 #head(my_ensembl_gene_id)
