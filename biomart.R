@@ -1,4 +1,3 @@
-
 # <差异基因分析>
 # 1.判断是否有BiocManager包，若不存在则安装
 #options(repos=structure(c(CRAN="https://mirrors.tuna.tsinghua.edu.cn/CRAN/"))) #设置清华镜像，加速下载
@@ -46,13 +45,15 @@ sum(res$padj < 0.05, na.rm = TRUE)	#统计padj小于0.05显著差异的基因
 ##8.过滤上调、下调基因
 filter_up <- subset(res, pvalue < 0.05 & log2FoldChange > 1) #过滤上调基因
 filter_down <- subset(res, pvalue < 0.05 & log2FoldChange < -1) #过滤下调基因
+filter_diff  <- subset(res, padj < 0.05)	#统计padj小于0.05显著差异的基因
+
 print(paste('差异上调基因数量: ', nrow(filter_up)))  #打印上调基因数量
 print(paste('差异下调基因数量: ', nrow(filter_down)))  #打印下调基因数量
 
 ##9.保存到文件
-write.table(as.data.frame(res), file = "./differential_gene.txt") #log2FoldChange + pvalue + padj
-write.table(filter_up, file="./filter_up_gene.txt", quote = F)  
-write.table(filter_up, file="./filter_down_gene.txt", quote = F)
+write.table(filter_diff, file = "./differential_gene.txt", sep = "\t") #log2FoldChange + pvalue + padj
+write.table(filter_up, file="./filter_up_gene.txt", quote = F, sep = "\t")  
+write.table(filter_down, file="./filter_down_gene.txt", quote = F, sep = "\t")
 
 
 #------------------------------------------------------
@@ -68,22 +69,21 @@ EnhancedVolcano(res,
                 FCcutoff = 1 ,
                 colAlpha = 1,
                 col=c(' black','blue',' green','red1'),
-
+                
 )
 
 #----------------------------------------------------------
 
 library("biomaRt")
-diff_gene_deseq2 <-subset(res, pvalue < 0.05 & log2FoldChange > 1 | log2FoldChange < -1)
-head(diff_gene_deseq2)
 mart <- useDataset("sscrofa_gene_ensembl", useMart("ensembl"))
-my_ensembl_gene_id <- row.names(diff_gene_deseq2)
+my_ensembl_gene_id <- row.names(filter_diff)
 head(my_ensembl_gene_id)
 pig_symbols <- getBM(attributes = c('ensembl_gene_id','external_gene_name','description'),filters = 'ensembl_gene_id', values = my_ensembl_gene_id, mart = mart)
 head(pig_symbols)
-ensembl_gene_id <- rownames(diff_gene_deseq2)
-diff_gene_deseq2 <- cbind(ensembl_gene_id,diff_gene_deseq2)
-colnames(diff_gene_deseq2)[1]<-c("ensembl_gene_id")
-diff_name <-merge(diff_gene_deseq2, pig_symbols, by="ensembl_gene_id")
-
+ensembl_gene_id <- rownames(filter_diff)
+filter_diff <- cbind(ensembl_gene_id,filter_diff)
+colnames(filter_diff)[1]<-c("ensembl_gene_id")
+diff_name <-merge(filter_diff, pig_symbols, by="ensembl_gene_id")
+diff_name
+write.table(diff_name, file="./all_diff_genename.txt", quote = F, sep = "\t")  
 
